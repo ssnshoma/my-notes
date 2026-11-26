@@ -1,0 +1,203 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{examstyle}[2026/11/25 Professional Exam Template]
+
+% ---------- بسته‌های پایه ----------
+\RequirePackage[
+margin=0.8cm,
+top=2.2cm,
+bottom=2.2cm,
+]{geometry}
+
+\RequirePackage{amsmath,amssymb}
+\RequirePackage[most]{tcolorbox}
+\RequirePackage{xcolor}
+\RequirePackage{tikz}
+
+% ---------- متغیرهای مشخصات آزمون ----------
+\newcommand{\ExamTitle}[1]{\def\@ExamTitle{#1}}
+\newcommand{\ExamSubtitle}[1]{\def\@ExamSubtitle{#1}}
+\newcommand{\TeacherName}[1]{\def\@TeacherName{#1}}
+\newcommand{\TelegramID}[1]{\def\@TelegramID{#1}}
+\newcommand{\PhoneNumber}[1]{\def\@PhoneNumber{#1}}
+\newcommand{\WatermarkText}[1]{\def\@WatermarkText{#1}}
+
+% مقادیر پیش‌فرض
+\ExamTitle{عنوان آزمون}
+\ExamSubtitle{زیرعنوان یا پایه تحصیلی}
+\TeacherName{نام مدرس}
+\TelegramID{@TelegramID}
+\PhoneNumber{09120000000}
+\WatermarkText{آموزشگاه ریاضیات}
+
+% ---------- رنگ‌ها ----------
+\definecolor{titlepink}{RGB}{200,60,140}
+\definecolor{frame}{RGB}{180,80,160}
+
+% ---------- تنظیمات صفحه ----------
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\pagestyle{empty}
+
+% ---------- لایه ۱: سربرگ و پاورقی در پس‌زمینه ----------
+\AddToHook{shipout/background}{%
+	% سربرگ
+	\put(0.8cm,-\dimexpr 0.8cm + 12mm\relax){%
+		\begin{tcolorbox}[
+			enhanced,
+			width=\dimexpr\paperwidth - 1.6cm\relax,
+			colback=white,
+			colframe=frame,
+			arc=3mm,
+			boxrule=1.2pt,
+			left=4mm, right=4mm, top=2mm, bottom=2mm
+			]
+			\textbf{\textcolor{titlepink}{\@ExamTitle}}%
+			\hfill
+			\textbf{\textcolor{titlepink}{\@ExamSubtitle}}%
+			\hfill
+			{\small\textcolor{gray}{صفحهٔ \thepage}}%
+		\end{tcolorbox}%
+	}%
+	% پاورقی
+	\put(0.8cm,-\dimexpr\paperheight - 0.8cm\relax){%
+		\begin{tcolorbox}[
+			enhanced,
+			width=\dimexpr\paperwidth - 1.6cm\relax,
+			colback=white,
+			colframe=frame,
+			arc=2.5mm,
+			boxrule=1.1pt,
+			left=4mm, right=4mm, top=1mm, bottom=1mm
+			]
+			{\small
+				\textbf{\textcolor{titlepink}{مدرس:}} \@TeacherName
+				\hfill
+				\textbf{\textcolor{titlepink}{تلگرام:}} \lr{\@TelegramID}
+				\hfill
+				\textbf{\textcolor{titlepink}{ارتباط:}} \lr{\@PhoneNumber}%
+			}
+		\end{tcolorbox}%
+	}%
+}
+
+% ---------- لایه ۲: واترمارک در پیش‌زمینه ----------
+\AddToHook{shipout/foreground}{%
+	\begin{tikzpicture}[remember picture, overlay]
+		\node[rotate=45, text=gray, text opacity=0.12, font=\fontsize{40}{40}\bfseries] at ([yshift=0.25\paperheight]current page.center) {\@WatermarkText};
+		\node[rotate=45, text=gray, text opacity=0.12, font=\fontsize{40}{40}\bfseries] at (current page.center) {\@WatermarkText};
+		\node[rotate=45, text=gray, text opacity=0.12, font=\fontsize{40}{40}\bfseries] at ([yshift=-0.25\paperheight]current page.center) {\@WatermarkText};
+	\end{tikzpicture}%
+}
+
+% ---------- کادر سؤالات چندصفحه‌ای ----------
+\newtcolorbox{QuestionsFrame}{
+	enhanced,
+	breakable,
+	colback=white,
+	colframe=frame,
+	arc=3.5mm,
+	boxrule=1.2pt,
+	width=\linewidth,
+	left=4mm, right=4mm, top=4mm, bottom=4mm,
+	before=\par\nointerlineskip\vspace{0pt},
+	after=\par\nointerlineskip,
+	before skip=0pt,
+	after skip=0pt,
+	pad at break=3mm,
+	skin first=enhanced,
+	skin middle=enhanced,
+	skin last=enhanced,
+	toprule at break=1.2pt,
+	bottomrule at break=1.2pt,
+	extras first={rounded corners, boxrule=1.2pt},
+	extras middle={rounded corners, boxrule=1.2pt},
+	extras last={rounded corners, boxrule=1.2pt}
+}
+
+% ---------- شمارنده سؤال و ابزارهای پاسخ ----------
+\newcounter{question}
+\setcounter{question}{0}
+
+\NewDocumentCommand{\source}{m}{%
+	\hspace{0.8em}%
+	{\normalfont\small\textcolor{gray}{(#1)}}%
+}
+
+\NewDocumentCommand{\answerline}{}{%
+	\noindent{\color{gray!70}\dotfill}\par
+	\vspace{3mm}%
+}
+
+\ExplSyntaxOn
+\NewDocumentCommand{\answerlines}{m}
+{
+	\int_step_inline:nn {#1}
+	{
+		\answerline
+	}
+}
+\ExplSyntaxOff
+
+% ---------- گزینه‌های تطبیقی (راست‌به‌چپ) ----------
+\newlength{\ChoiceWidthOne}
+\newlength{\ChoiceWidthTwo}
+\newlength{\ChoiceWidthThree}
+\newlength{\ChoiceWidthFour}
+\newlength{\ChoicePairA}
+\newlength{\ChoicePairB}
+
+\NewDocumentCommand{\fourchoice}{m m m m}{%
+	\par\vspace{1.5mm}%
+	\begingroup
+	\normalfont
+	\settowidth{\ChoiceWidthOne}{(الف)\enspace #1}%
+	\settowidth{\ChoiceWidthTwo}{(ب)\enspace #2}%
+	\settowidth{\ChoiceWidthThree}{(ج)\enspace #3}%
+	\settowidth{\ChoiceWidthFour}{(د)\enspace #4}%
+	
+	\setlength{\ChoicePairA}{\ChoiceWidthOne}%
+	\ifdim\ChoiceWidthThree>\ChoicePairA
+	\setlength{\ChoicePairA}{\ChoiceWidthThree}%
+	\fi
+	
+	\setlength{\ChoicePairB}{\ChoiceWidthTwo}%
+	\ifdim\ChoiceWidthFour>\ChoicePairB
+	\setlength{\ChoicePairB}{\ChoiceWidthFour}%
+	\fi
+	
+	\ifdim\dimexpr\ChoiceWidthOne+\ChoiceWidthTwo+\ChoiceWidthThree+\ChoiceWidthFour+12mm\relax<\linewidth
+	\noindent
+	\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}rrrr@{}}
+		(الف)\enspace #1 & (ب)\enspace #2 & (ج)\enspace #3 & (د)\enspace #4
+	\end{tabular*}
+	\else
+	\ifdim\dimexpr\ChoicePairA+\ChoicePairB+8mm\relax<\linewidth
+	\noindent
+	\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}rr@{}}
+		(الف)\enspace #1 & (ب)\enspace #2 \\
+		[1.5mm]
+		(ج)\enspace #3 & (د)\enspace #4
+	\end{tabular*}
+	\else
+	\noindent\parbox[t]{\linewidth}{(الف)\enspace #1}\par\vspace{1mm}
+	\noindent\parbox[t]{\linewidth}{(ب)\enspace #2}\par\vspace{1mm}
+	\noindent\parbox[t]{\linewidth}{(ج)\enspace #3}\par\vspace{1mm}
+	\noindent\parbox[t]{\linewidth}{(د)\enspace #4}\par
+	\fi
+	\fi
+	\endgroup
+	\vspace{1.5mm}%
+}
+
+% ---------- دستور سؤال ----------
+\NewDocumentCommand{\question}{+m m}{%
+	\refstepcounter{question}%
+	\vspace{2mm}
+	\noindent
+	{\large\textbf{\thequestion-}}\ #1\par
+	\ifnum#2>0
+	\vspace{2mm}
+	\answerlines{#2}
+	\fi
+	\vspace{3mm}
+}
